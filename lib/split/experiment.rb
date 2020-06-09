@@ -101,7 +101,7 @@ module Split
     end
 
     def new_record?
-      !redis.exists(name)
+      !redis.exists?(name)
     end
 
     def ==(obj)
