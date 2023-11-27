@@ -87,7 +87,7 @@ module Split
         persist_experiment_configuration
       end
 
-      redis.hset(experiment_config_key, :resettable, resettable)
+      redis.hset(experiment_config_key, :resettable, resettable.to_s)
       redis.hset(experiment_config_key, :algorithm, algorithm.to_s)
       self
     end
@@ -101,7 +101,7 @@ module Split
     end
 
     def new_record?
-      !redis.exists(name)
+      !redis.exists?(name)
     end
 
     def ==(obj)
@@ -390,11 +390,28 @@ module Split
 
     def jstring(goal = nil)
       js_id = if goal.nil?
-                name
-              else
-                name + "-" + goal
-              end
-      js_id.gsub('/', '--')
+        name
+      else
+        name + "-" + goal
+      end
+      js_id.gsub("/", "--")
+    end
+
+    def cohorting_disabled?
+      @cohorting_disabled ||= begin
+        value = redis.hget(experiment_config_key, :cohorting)
+        value.nil? ? false : value.downcase == "true"
+      end
+    end
+
+    def disable_cohorting
+      @cohorting_disabled = true
+      redis.hset(experiment_config_key, :cohorting, true.to_s)
+    end
+
+    def enable_cohorting
+      @cohorting_disabled = false
+      redis.hset(experiment_config_key, :cohorting, false.to_s)
     end
 
     protected
